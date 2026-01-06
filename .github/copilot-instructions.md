@@ -61,44 +61,144 @@ Cada universidad es un "tenant" separado con sus propios:
 - Configuración (logo, colores, subdomain)
 - Embeddings RAG (información específica de la universidad)
 
+### 🎯 Filosofía: Arquitectura Híbrida IA + Algoritmos
+```
+┌─────────────────────────────────────────────────────────┐
+│                    PRINCIPIO RECTOR                     │
+├─────────────────────────────────────────────────────────┤
+│ LLM/IA:     Input flexible + Explicaciones naturales    │
+│ Algoritmos: Validación estricta + Optimización confiable│
+└─────────────────────────────────────────────────────────┘
+```
+
+**Regla de Oro:** 
+- ✅ IA para procesamiento de documentos y UX
+- ✅ Algoritmos para decisiones críticas (prerrequisitos, conflictos)
+- ❌ NUNCA confiar solo en LLM para lógica de negocio
+
 ### Componentes Principales
 ```
-┌─────────────────────────────────────────┐
-│         FastAPI Backend                 │
-│                                         │
-│  ┌────────────────────────────────┐    │
-│  │   LangGraph Agent              │    │
-│  │   ┌──────────────────────┐     │    │
-│  │   │ Vision Tools:        │     │    │
-│  │   │ - Analizar Oferta    │     │    │
-│  │   │ - Analizar Mapa      │     │    │
-│  │   │ - Analizar Kardex    │     │    │
-│  │   └──────────────────────┘     │    │
-│  │   ┌──────────────────────┐     │    │
-│  │   │ Schedule Builder:    │     │    │
-│  │   │ - Filtrar elegibles  │     │    │
-│  │   │ - Generar horarios   │     │    │
-│  │   │ - Rankear opciones   │     │    │
-│  │   └──────────────────────┘     │    │
-│  │   ┌──────────────────────┐     │    │
-│  │   │ RAG Tool:            │     │    │
-│  │   │ - Info Universidad   │     │    │
-│  │   └──────────────────────┘     │    │
-│  └────────────────────────────────┘    │
-│                                         │
-│  ┌────────────────────────────────┐    │
-│  │   PostgreSQL Multi-Tenant      │    │
-│  │   - universidades              │    │
-│  │   - estudiantes                │    │
-│  │   - carreras                   │    │
-│  │   - sesiones_consultoria       │    │
-│  │   - universidad_info (RAG)     │    │
-│  └────────────────────────────────┘    │
-│                                         │
-│  ┌────────────────────────────────┐    │
-│  │   Redis Cache                  │    │
-│  └────────────────────────────────┘    │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    FastAPI Backend                          │
+│                                                             │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │              LangGraph Agent (Orquestador)        │      │
+│  │                                                   │      │
+│  │  CAPA 1: EXTRACCIÓN (IA - Flexible)              │      │
+│  │  ┌────────────────────────────────────────┐      │      │
+│  │  │ Vision Tools (Gemini 1.5 Pro):         │      │      │
+│  │  │ - Analizar Oferta Académica            │      │      │
+│  │  │ - Analizar Mapa Curricular             │      │      │
+│  │  │ - Analizar Kárdex                      │      │      │
+│  │  │ Output: JSON estructurado + Pydantic   │      │      │
+│  │  └────────────────────────────────────────┘      │      │
+│  │                      ↓                            │      │
+│  │  CAPA 2: VALIDACIÓN (Algoritmos - Estricta)      │      │
+│  │  ┌────────────────────────────────────────┐      │      │
+│  │  │ Validator Engine (Python puro):        │      │      │
+│  │  │ ✓ Verificar prerrequisitos (grafo)     │      │      │
+│  │  │ ✓ Validar créditos acumulados          │      │      │
+│  │  │ ✓ Detectar inconsistencias             │      │      │
+│  │  │ ✓ Bloquear datos inválidos             │      │      │
+│  │  └────────────────────────────────────────┘      │      │
+│  │                      ↓                            │      │
+│  │  CAPA 3: OPTIMIZACIÓN (Algoritmos - Confiable)   │      │
+│  │  ┌────────────────────────────────────────┐      │      │
+│  │  │ Schedule Builder (Algoritmo):          │      │      │
+│  │  │                                        │      │      │
+│  │  │ 1. Filtrar Materias Elegibles:         │      │      │
+│  │  │    - Prerrequisitos cumplidos          │      │      │
+│  │  │    - No aprobadas                      │      │      │
+│  │  │    - Disponibles en oferta             │      │      │
+│  │  │                                        │      │      │
+│  │  │ 2. Generar Combinaciones:              │      │      │
+│  │  │    - Backtracking + Heurísticas        │      │      │
+│  │  │    - Validar conflictos de horario     │      │      │
+│  │  │    - Respetar disponibilidad alumno    │      │      │
+│  │  │                                        │      │      │
+│  │  │ 3. Ranking Multi-Criterio:             │      │      │
+│  │  │    - Priorizar reprobadas (peso 3x)    │      │      │
+│  │  │    - Minimizar huecos (peso 2x)        │      │      │
+│  │  │    - Cumplir preferencias (peso 1x)    │      │      │
+│  │  │    - Avance curricular (desbloqueos)   │      │      │
+│  │  └────────────────────────────────────────┘      │      │
+│  │                      ↓                            │      │
+│  │  CAPA 4: EXPLICACIÓN (IA - UX)                   │      │
+│  │  ┌────────────────────────────────────────┐      │      │
+│  │  │ Chat Explainer (Gemini Flash):         │      │      │
+│  │  │ - Traducir decisiones a lenguaje       │      │      │
+│  │  │   natural                              │      │      │
+│  │  │ - Responder "¿Por qué X materia?"      │      │      │
+│  │  │ - Sugerir alternativas                 │      │      │
+│  │  └────────────────────────────────────────┘      │      │
+│  │                                                   │      │
+│  │  CAPA 5: RAG (IA - Consultas)                    │      │
+│  │  ┌────────────────────────────────────────┐      │      │
+│  │  │ RAG Tool (pgvector + Gemini):          │      │      │
+│  │  │ - Info general universidad             │      │      │
+│  │  │ - Reglamentos académicos               │      │      │
+│  │  │ - FAQs                                 │      │      │
+│  │  │ Filtro: universidad_id (multi-tenant)  │      │      │
+│  │  └────────────────────────────────────────┘      │      │
+│  └──────────────────────────────────────────────────┘      │
+│                                                             │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │   PostgreSQL Multi-Tenant                        │      │
+│  │   - universidades (tenant)                       │      │
+│  │   - estudiantes                                  │      │
+│  │   - carreras                                     │      │
+│  │   - mapas_curriculares (grafos prerrequisitos)   │      │
+│  │   - ofertas_academicas                           │      │
+│  │   - sesiones_consultoria (historial)             │      │
+│  │   - universidad_info (RAG)                       │      │
+│  └──────────────────────────────────────────────────┘      │
+│                                                             │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │   Redis Cache                                    │      │
+│  │   - Embeddings procesados                        │      │
+│  │   - Grafos de prerrequisitos                     │      │
+│  │   - Ofertas académicas activas                   │      │
+│  └──────────────────────────────────────────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 🔒 Garantías de Confiabilidad
+
+**1. Validación en Capas:**
+```python
+# Checkpoint 1: Extracción (IA)
+datos_raw = vision_tool.extract(image)
+
+# Checkpoint 2: Validación (Pydantic)
+try:
+    datos_validados = KardexSchema(**datos_raw)
+except ValidationError:
+    return "Error: datos inconsistentes, revisar documento"
+
+# Checkpoint 3: Lógica de Negocio (Algoritmo)
+if not validador.cumple_prerrequisitos(materia, kardex):
+    return "Error: prerequisitos no cumplidos"
+
+# Checkpoint 4: Restricciones Físicas (Algoritmo)
+if tiene_conflicto_horario(horario):
+    return "Error: conflicto de tiempo detectado"
+```
+
+**2. No Errores Críticos:**
+- ✅ Prerrequisitos: Verificados con grafo dirigido (networkx)
+- ✅ Conflictos horario: Validación por intervalos de tiempo
+- ✅ Créditos: Sumas matemáticas exactas
+- ✅ Disponibilidad: Match booleano estricto
+- ❌ NUNCA: "El LLM decide si puede tomar la materia"
+
+**3. Fallbacks:**
+```python
+if llm_extraction_fails:
+    # Opción 1: Pedir al usuario corregir imagen
+    # Opción 2: Formulario manual
+    # Opción 3: Parsear con regexes si es PDF estructurado
+    
+# NUNCA: "Asumir datos" o "Dejar pasar errores"
 ```
 
 ---
@@ -109,48 +209,91 @@ ProyectoTerminal/
 ├── backend/
 │   ├── app/
 │   │   ├── agents/              # Agentes LangGraph
-│   │   │   └── tutor_agent.py   # Agente principal
-│   │   ├── tools/               # LangChain Tools
-│   │   │   ├── vision_tool.py   # Analizar imágenes (oferta/mapa/kardex)
-│   │   │   ├── schedule_builder.py  # Construir horarios
-│   │   │   └── rag_tool.py      # Búsqueda en info universidad
-│   │   ├── chains/              # LangChain Chains (si se necesitan)
+│   │   │   ├── tutor_agent.py   # Agente principal (orquestador)
+│   │   │   ├── extractor_agent.py  # Sub-agente: extracción documentos
+│   │   │   └── explainer_agent.py  # Sub-agente: explicaciones NL
+│   │   │
+│   │   ├── tools/               # LangChain Tools (solo I/O con LLM)
+│   │   │   ├── vision_tool.py   # Gemini Vision: extraer datos
+│   │   │   └── rag_tool.py      # Búsqueda semántica info universidad
+│   │   │
+│   │   ├── core/                # ALGORITMOS (lógica crítica)
+│   │   │   ├── validators.py    # Validadores estrictos
+│   │   │   │   ├─ validar_prerrequisitos()
+│   │   │   │   ├─ validar_creditos()
+│   │   │   │   └─ validar_seriacion()
+│   │   │   ├── prerequisite_graph.py  # Grafo de prerrequisitos
+│   │   │   ├── schedule_builder.py    # Algoritmo de horarios
+│   │   │   │   ├─ filtrar_materias_elegibles()
+│   │   │   │   ├─ generar_combinaciones()
+│   │   │   │   ├─ detectar_conflictos()
+│   │   │   │   └─ rankear_horarios()
+│   │   │   └── constraints.py   # Reglas de negocio
+│   │   │
 │   │   ├── api/                 # Endpoints FastAPI
 │   │   │   ├── auth.py          # Login, registro
 │   │   │   ├── estudiantes.py   # CRUD estudiantes
 │   │   │   ├── consultoria.py   # Endpoint principal del agente
 │   │   │   └── universidades.py # Panel admin universidades
+│   │   │       ├─ POST /universidades
+│   │   │       ├─ POST /universidades/{id}/carreras
+│   │   │       ├─ POST /universidades/{id}/info
+│   │   │       └─ GET /universidades/{id}/dashboard
+│   │   │
 │   │   ├── db/                  # Database
 │   │   │   ├── session.py       # SQLAlchemy session
 │   │   │   └── base.py          # Base declarativa
+│   │   │
 │   │   ├── models/              # Modelos SQLAlchemy
 │   │   │   ├── universidad.py
 │   │   │   ├── estudiante.py
 │   │   │   ├── carrera.py
-│   │   │   └── sesion.py
-│   │   ├── schemas/             # Pydantic schemas (request/response)
+│   │   │   ├── mapa_curricular.py   # Estructura + grafo prerrequisitos
+│   │   │   ├── oferta_academica.py  # Grupos disponibles
+│   │   │   ├── sesion.py
+│   │   │   └── universidad_info.py  # Docs para RAG
+│   │   │
+│   │   ├── schemas/             # Pydantic schemas (validación estricta)
 │   │   │   ├── auth.py
 │   │   │   ├── estudiante.py
-│   │   │   └── consultoria.py
-│   │   ├── services/            # Lógica de negocio
+│   │   │   ├── consultoria.py
+│   │   │   ├── kardex.py        # Validación de historial
+│   │   │   ├── mapa_curricular.py
+│   │   │   ├── oferta_academica.py
+│   │   │   └── horario.py       # Validación de horarios generados
+│   │   │
+│   │   ├── services/            # Lógica de negocio (capa intermedia)
 │   │   │   ├── auth_service.py
-│   │   │   ├── vision_service.py
-│   │   │   └── schedule_service.py
-│   │   ├── core/                # Configuración
-│   │   │   ├── config.py        # Settings con Pydantic
+│   │   │   ├── vision_service.py     # Wrapper de vision tool
+│   │   │   ├── schedule_service.py   # Wrapper de schedule builder
+│   │   │   ├── validator_service.py  # Orquesta validaciones
+│   │   │   └── university_service.py # CRUD universidades
+│   │   │
+│   │   ├── config/              # Configuración
+│   │   │   ├── settings.py      # Settings con Pydantic
 │   │   │   ├── security.py      # JWT, hashing
 │   │   │   └── dependencies.py  # Dependency injection
+│   │   │
 │   │   ├── __init__.py
 │   │   └── main.py              # App FastAPI
+│   │
 │   ├── alembic/                 # Migraciones de DB
 │   │   └── versions/
 │   ├── tests/                   # Tests unitarios/integración
+│   │   ├── test_validators.py   # CRÍTICO: Tests de validación
+│   │   ├── test_schedule_builder.py  # CRÍTICO: Tests algoritmo
+│   │   ├── test_constraints.py
+│   │   └── test_integration.py
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   ├── .env                     # Variables de entorno (NO en Git)
 │   └── alembic.ini
+│
 ├── frontend/                    # Frontend (futuro)
 ├── docs/                        # Documentación
+│   ├── arquitectura.md          # Diagrama de arquitectura
+│   ├── algoritmos.md            # Documentación de algoritmos
+│   └── validadores.md           # Reglas de validación
 ├── uploads/                     # Imágenes temporales
 ├── .github/
 │   ├── workflows/               # CI/CD
@@ -159,6 +302,26 @@ ProyectoTerminal/
 ├── .gitignore
 └── README.md
 ```
+
+### 🎯 Separación Clara de Responsabilidades
+
+**LLM (tools/):** Input/Output flexible
+- ✅ Extraer datos de imágenes/PDFs
+- ✅ Responder preguntas en lenguaje natural
+- ✅ Explicar decisiones del sistema
+- ❌ NO tomar decisiones críticas
+
+**Algoritmos (core/):** Lógica confiable
+- ✅ Validar prerrequisitos (grafo)
+- ✅ Generar combinaciones de horarios
+- ✅ Detectar conflictos
+- ✅ Rankear opciones
+- ✅ Aplicar reglas de negocio
+
+**Servicios (services/):** Orquestación
+- Combinar LLM + Algoritmos
+- Manejo de errores
+- Logging y observabilidad
 
 ---
 
@@ -459,13 +622,19 @@ results = vectorstore.similarity_search(
 - explicacion (text)
 - created_at (timestamp)
 
-**universidad_info** (para RAG)
+**universidad_info** (para RAG - Base de Conocimiento)
 - id (UUID, PK)
 - universidad_id (UUID, FK)
-- tipo (str) - "mision", "vision", "calendario"
-- contenido (text)
-- metadata (JSONB)
-- embedding (vector) - para búsqueda semántica
+- tipo (enum) - "general", "reglamento", "materia", "organigrama", "faq", "enlace"
+- categoria (str) - "academico", "administrativo", "servicios", etc.
+- titulo (str) - Título del documento/info
+- contenido (text) - Contenido completo
+- url (str, nullable) - Link si aplica
+- archivo_url (str, nullable) - GCS path si es PDF/imagen
+- metadata (JSONB) - {"keywords": [...], "fecha": "", "autor": ""}
+- embedding (vector) - Para búsqueda semántica
+- created_at (timestamp)
+- updated_at (timestamp)
 
 ---
 
@@ -617,11 +786,23 @@ Estudiantes universitarios pierden tiempo armando horarios manualmente y cometen
 - Se inscriben a materias sin cumplir prerrequisitos
 - Arman horarios con huecos innecesarios
 - No optimizan su carga académica
+- Carecen de información clara sobre su universidad
 
 ### Propuesta de Valor
-1. **Para Estudiantes:** Horarios optimizados en 5 minutos vs 2+ horas manual
-2. **Para Universidades:** Reduce errores de inscripción y rezago académico
-3. **Diferenciador:** Acepta documentos en imagen (flexibilidad) usando IA moderna
+1. **Para Estudiantes:** 
+   - Horarios optimizados en 5 minutos vs 2+ horas manual
+   - Consulta información de universidad 24/7 (chatbot IA)
+   - Recomendaciones de materias basadas en prerrequisitos
+   
+2. **Para Universidades:** 
+   - Reduce errores de inscripción y rezago académico
+   - Centraliza información institucional accesible
+   - Dashboard de métricas de uso
+   
+3. **Diferenciador Técnico:** 
+   - Acepta documentos en **cualquier formato** (PDF, imagen, Excel, foto)
+   - Cada universidad tiene formatos diferentes → Vision AI flexible
+   - Sistema híbrido: IA extrae, Algoritmos validan (0% errores críticos)
 
 ### KPIs del Proyecto
 - Precisión extracción: >90% en datos de imágenes
@@ -740,18 +921,56 @@ Este es un **proyecto académico terminal** pero se desarrolla con **estándares
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
-│ 3. CONFIGURAR INFORMACIÓN GENERAL                       │
+│ 3. CONFIGURAR INFORMACIÓN (BASE DE CONOCIMIENTO RAG)  │
 ├─────────────────────────────────────────────────────────┤
-│ Secciones:                                             │
-│ ├─ Misión y Visión                                     │
-│ ├─ Calendario Académico (PDF/imagen)                   │
-│ ├─ Organigrama (PDF/imagen)                            │
-│ ├─ Reglamentos (PDFs múltiples)                        │
-│ ├─ Contactos (teléfonos, emails)                       │
-│ └─ FAQs generales                                      │
+│ Tipos de Contenido Soportados:                        │
 │                                                         │
-│ Sistema: Procesa documentos → Embeddings → pgvector    │
-│ Output: RAG listo para consultas de estudiantes        │
+│ A) INFORMACIÓN GENERAL:                               │
+│    ├─ Misión y Visión (texto)                        │
+│    ├─ Historia de la universidad                    │
+│    ├─ Valores institucionales                       │
+│    └─ Contactos (teléfonos, emails, direcciones)   │
+│                                                         │
+│ B) DOCUMENTOS ACADÉMICOS:                            │
+│    ├─ Calendario Académico (PDF/imagen/Excel)      │
+│    ├─ Reglamentos (PDFs múltiples)                  │
+│    ├─ Planes de estudio                            │
+│    └─ Políticas de titulación                       │
+│                                                         │
+│ C) DETALLES DE MATERIAS:                               │
+│    ├─ Descripciones detalladas                      │
+│    ├─ Seriación y prerrequisitos                   │
+│    └─ Bibliografía recomendada                      │
+│                                                         │
+│ D) ESTRUCTURAS ORGANIZACIONALES:                       │
+│    ├─ Organigrama (PDF/imagen)                      │
+│    ├─ Directorio de profesores                      │
+│    └─ Departamentos y coordinaciones                │
+│                                                         │
+│ E) ENLACES Y RECURSOS:                                 │
+│    ├─ Links a sistemas (SIAE, biblioteca, etc)      │
+│    ├─ Recursos digitales                            │
+│    └─ Servicios estudiantiles                       │
+│                                                         │
+│ F) FAQs:                                               │
+│    ├─ Preguntas frecuentes administrativas          │
+│    ├─ Preguntas académicas                           │
+│    └─ Preguntas de servicios                        │
+│                                                         │
+│ Formatos Aceptados:                                    │
+│ • Texto directo (formulario web)                      │
+│ • PDF                                                 │
+│ • Imagen (JPG, PNG)                                  │
+│ • Word/Excel                                          │
+│ • URLs (links externos)                              │
+│                                                         │
+│ Sistema:                                               │
+│ 1. Procesa documentos con Vision AI                    │
+│ 2. Genera embeddings con Gemini                        │
+│ 3. Almacena en pgvector                                │
+│ 4. Filtra por universidad_id (multi-tenant)            │
+│                                                         │
+│ Output: Base de conocimiento lista para RAG            │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -904,20 +1123,29 @@ Este es un **proyecto académico terminal** pero se desarrolla con **estándares
 ```
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ 3C. FLUJO: CHAT CON TUTOR IA (RAG)                     │
+│ 3C. FLUJO: CHAT CON TUTOR IA (RAG Inteligente)         │
 ├─────────────────────────────────────────────────────────┤
-│ Interfaz tipo ChatGPT:                                 │
+│ Interfaz tipo ChatGPT con Búsqueda en Cascada:        │
 │                                                         │
+│ EJEMPLO 1: Consulta Simple                            │
+│ ─────────────────────────────────────────────────────── │
 │ 🧑 Estudiante:                                          │
 │ "¿Cuál es la fecha límite de inscripciones?"          │
+│                                                         │
+│ [Sistema: Búsqueda en pgvector → Encontrado]          │
 │                                                         │
 │ 🤖 Tutor IA:                                            │
 │ "Según el calendario académico 2024-2, las            │
 │  inscripciones son del 15 al 22 de enero.             │
 │  [Fuente: Calendario Académico 2024-2, pág. 3]"       │
 │                                                         │
+│ EJEMPLO 2: Consulta Compleja                          │
+│ ─────────────────────────────────────────────────────── │
 │ 🧑 Estudiante:                                          │
 │ "¿Puedo inscribir 7 materias?"                        │
+│                                                         │
+│ [Sistema: Búsqueda en pgvector → Encontrado]          │
+│ [Sistema: Consulta kárdex del estudiante → Promedio]  │
 │                                                         │
 │ 🤖 Tutor IA:                                            │
 │ "Según el reglamento de UniCaribe, el máximo es       │
@@ -927,26 +1155,80 @@ Este es un **proyecto académico terminal** pero se desarrolla con **estándares
 │  Tu promedio actual es 8.2, así que te sugiero        │
 │  mantener 5-6 materias. [Art. 23, Reglamento]"        │
 │                                                         │
-│ Contexto usado: Documentos de la universidad (RAG)     │
-│ + Datos del estudiante (kárdex)                        │
+│ EJEMPLO 3: Info No Disponible                          │
+│ ─────────────────────────────────────────────────────── │
+│ 🧑 Estudiante:                                          │
+│ "¿Dónde puedo conseguir el libro de Cálculo?"         │
+│                                                         │
+│ [Sistema: Búsqueda en pgvector → No encontrado]      │
+│ [Sistema: Intenta web search → No configurado]        │
+│ [Sistema: Usa conocimiento base LLM]                   │
+│                                                         │
+│ 🤖 Tutor IA:                                            │
+│ "No tengo información específica sobre ese libro     │
+│  en la base de datos de UniCaribe. Te sugiero:       │
+│  1. Consultar con tu profesor                        │
+│  2. Revisar la biblioteca universitaria              │
+│  3. Preguntar en [enlace coordinación ISW]"          │
+│                                                         │
+│ ESTRATEGIA DE BÚSQUEDA EN CASCADA:                     │
+│ ─────────────────────────────────────────────────────── │
+│ Nivel 1: Documentos propios (pgvector RAG)             │
+│   → Búsqueda semántica en docs subidos por universidad │
+│   → Filtro estricto: universidad_id                    │
+│                                                         │
+│ Nivel 2: Web Search (opcional, si se configura)       │
+│   → Buscar en sitio web oficial de universidad       │
+│   → Solo si no se encuentra en Nivel 1              │
+│                                                         │
+│ Nivel 3: Conocimiento Base del LLM                     │
+│   → Respuestas generales educativas                  │
+│   → Sin datos específicos de universidad            │
+│                                                         │
+│ Nivel 4: No tengo información                          │
+│   → Reconocer limitación                            │
+│   → Sugerir fuentes alternativas                     │
+│                                                         │
+│ Contexto Disponible:                                   │
+│ • Documentos de la universidad (RAG)                  │
+│ • Datos del estudiante (kárdex, disponibilidad)      │
+│ • Historial de conversación                           │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 💰 Estrategia: 100% Gratis / Free Tier
+## 💰 Estrategia: Gratis Primero, Escalable Después
 
 ### 🎯 Principio Fundamental
-**"Si no es gratis en producción MVP, no lo usamos"**
+**"Prioridad: Resultados confiables. Costo: Lo más bajo posible."**
 
-Excepciones SOLO si:
-1. Es crítico para el proyecto
-2. No hay alternativa gratuita viable
-3. El costo es < $5/mes total del equipo
+**Fase 1 - MVP (Desarrollo):**
+- 100% Free tier permanente (Gemini, Supabase, Cloud Run)
+- Aprovechar trials gratuitos si es necesario
+- Sin compromiso de pago
+
+**Fase 2 - Piloto (3 universidades):**
+- Mantener free tiers donde sea posible
+- Evaluar costos reales de uso
+- Usar credits/grants estudiantiles (Google Cloud $300, GitHub Student)
+
+**Fase 3 - Producción (Futuro):**
+- Migrar a modelos pagos solo si:
+  1. Volumen excede free tier
+  2. Calidad/velocidad lo requiere
+  3. Hay ingresos para cubrir costos
+
+**Filosofía:**
+❌ NO sacrificar calidad por ser gratis al 100%
+✅ SÍ usar trials/credits para desarrollo
+✅ SÍ tener plan de escalamiento claro
 
 ---
 
-### ☁️ Servicios Cloud (Free Tier Confirmados)
+### ☁️ Servicios Cloud (Estrategia por Fases)
+
+**Servicios 100% Gratis (Permanentes):**
 
 | Servicio | Free Tier | Límite Mensual | Uso en Proyecto |
 |----------|-----------|----------------|-----------------|
@@ -961,7 +1243,21 @@ Excepciones SOLO si:
 | **LangSmith** | ✅ Gratis | 5K traces/mes | Debugging agente |
 | **Sentry** | ✅ Gratis | 5K events/mes | Error tracking |
 
-**Costo Total Mensual: $0 USD** ✅
+**Costo Total Mensual MVP: $0 USD** ✅
+
+**Créditos/Trials Disponibles (Desarrollo):**
+
+| Recurso | Beneficio | Duración | Uso |
+|---------|-----------|----------|-----|
+| Google Cloud Free Trial | $300 créditos | 90 días | Backup Cloud Run si excede free tier |
+| GitHub Student Pack | Varios servicios | 2 años | Copilot, Azure credits |
+| OpenAI Free Trial | $5 credits | Limitado | Testing comparativo GPT-4 vs Gemini |
+| Anthropic Claude | API key gratis | Limitado | Testing alternativo si Gemini falla |
+
+**Estrategia:**
+- MVP usa solo free tier permanente
+- Trials se usan para **testing** y **comparación de calidad**
+- Si un modelo pago da resultados significativamente mejores → documentar para decisión futura
 
 ---
 
