@@ -1,0 +1,55 @@
+# ===== STAGE 1: Builder =====
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+# Instalar dependencias de compilación
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar solo requirements primero (mejor cache)
+COPY requirements.txt .
+
+# Crear wheels para todas las dependencias
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+# ===== STAGE 2: Runtime =====
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar solo runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copiar wheels del builder e instalar
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/requirements.txt .
+RUN pip install --no-cache /wheels/* \
+    && rm -rf /wheels
+
+# Copiar código de la aplicación
+COPY . .
+
+# Crear usuario no-root para seguridad
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Variables de entorno para producción
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
+
+EXPOSE 8080
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl --fail http://localhost:8080/health || exit 1
+
+# Comando de producción con múltiples workers
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 2

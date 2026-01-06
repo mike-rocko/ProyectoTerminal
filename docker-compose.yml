@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     environment:
       POSTGRES_DB: tutor_ia
       POSTGRES_USER: postgres
@@ -26,16 +26,48 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend:/app
+      - ./uploads:/uploads
     ports:
       - "8000:8000"
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres_dev@postgres:5432/tutor_ia
+      ASYNC_DATABASE_URL: postgresql+asyncpg://postgres:postgres_dev@postgres:5432/tutor_ia
       REDIS_URL: redis://redis:6379
     depends_on:
       - postgres
       - redis
     networks:
       - tutor_network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - tutor_network
+
+  admin:
+    build: ./frontend
+    command: streamlit run admin_app.py --server.port=8502 --server.address=0.0.0.0
+    ports:
+      - "8502:8502"
+    environment:
+      API_URL: http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - tutor_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8502/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:

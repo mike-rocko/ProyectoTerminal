@@ -1,0 +1,34 @@
+# Dockerfile optimizado para producción en Cloud Run
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copiar requirements primero (mejor cache)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código
+COPY . .
+
+# Crear usuario no-root
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Variables de entorno
+ENV PYTHONUNBUFFERED=1 \
+    PORT=8080
+
+EXPOSE 8080
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl --fail http://localhost:8080/_stcore/health || exit 1
+
+# Ejecutar Streamlit en puerto de Cloud Run
+CMD streamlit run app.py --server.port=${PORT} --server.address=0.0.0.0 --server.headless=true
